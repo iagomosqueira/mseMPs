@@ -75,7 +75,7 @@ msePT <- function(
     stk <- window(omp, end=c(y - dlag))
     
     # oem w/ selectivity[, y - dlag] in weight
-    obs <- quantSums(oem(stk[,ac(seq(y - dlag - freq, y - dlag))],
+    obs <- quantSums(cpue(stk[,ac(seq(y - dlag - freq, y - dlag))],
       sel=cpuesel, mass=TRUE))
     
     # EXTEND cpue from delta(obs)

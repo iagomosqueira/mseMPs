@@ -8,34 +8,29 @@
 
 # mseIndex {{{
 
-#' An example function to carry out an MSE run for a given MP
-#'
-#' Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend
-#' odio ac rutrum luctus. Aenean placerat porttitor commodo. Pellentesque eget porta
-#' libero. Pellentesque molestie mi sed orci feugiat, non mollis enim tristique. 
-#' Suspendisse eu sapien vitae arcu lobortis ultrices vitae ac velit. Curabitur id 
-#' nunc euismod ante fringilla lobortis. Aliquam ullamcorper in diam non placerat. 
-#'
-#' Aliquam sagittis feugiat felis eget consequat. Praesent eleifend dolor massa, 
-#' vitae faucibus justo lacinia a. Cras sed erat et magna pharetra bibendum quis in 
-#' mi. Sed sodales mollis arcu, sit amet venenatis lorem fringilla vel. Vivamus vitae 
-#' ipsum sem. Donec malesuada purus at libero bibendum accumsan. Donec ipsum sapien, 
-#' feugiat blandit arcu in, dapibus dictum felis. 
-#'
-#' @param PARAM Lorem ipsum dolor sit amet
-#'
-#' @return RETURN Lorem ipsum dolor sit amet
-#'
-#' @name FUNCTION
-#' @rdname FUNCTION
-#' @aliases FUNCTION
-#'
-#' @author The FLR Team
-#' @seealso \link{FLComp}
-#' @keywords design
-#' @examples
-#'
+#' @title mseIndex
+#' @description FUNCTION_DESCRIPTION
+#' @param omp The population OM, an FLStock object extended to the projection years
+#' @param sr The stock-recruit relationship, as an FLSR, predictModel or list ibjcts with 'model' and 'params'
+#' @param cpue The observed coue series to be extended and used by the MP
+#' @param cpuesel PARAM_DESCRIPTION
+#' @param years Vector of years on which MP is to be evaluated
+#' @param verbose Show output on screen?, Default: FALSE
+#' @param hcr PARAM_DESCRIPTION, Default: ~tac * (1 + lambda * slope)
+#' @param hcrparams PARAM_DESCRIPTION, Default: FLPar(lambda = 1.25, ny = 5, dltac = 0.15, dhtac = 0.15)
+#' @param dlag PARAM_DESCRIPTION, Default: 1
+#' @param mlag PARAM_DESCRIPTION, Default: 1
+#' @param oemparams PARAM_DESCRIPTION, Default: FLPar(sd = 0, b = 0)
+#' @param imparams PARAM_DESCRIPTION
+#' @param tune PARAM_DESCRIPTION, Default: FALSE
+#' @return OUTPUT_DESCRIPTION
+#' @details DETAILS
+#' @examples 
 #' data(cod)
+#' @seealso 
+#'  \code{\link[utils]{txtProgressBar}},\code{\link[utils]{setTxtProgressBar}}
+#' @rdname mseIndex
+
 
 mseIndex <- function(
   # OM: FLStock + SR + RPs + cpue
@@ -70,8 +65,8 @@ mseIndex <- function(
     stk <- window(omp, end=c(y - dlag))
 
     # oem w/ selectivity[, y - dlag] in weight
-    obs <- quantSums(oem(stk[,ac(seq(y - dlag - freq, y - dlag))],
-      sel=cpuesel, mass=TRUE))
+    obs <- quantSums(cpue(stk[,ac(seq(y - dlag - freq, y - dlag))],
+      f=cpuesel, mass=TRUE))
     
     # EXTEND cpue from delta(obs)
     cpue[, ac(seq(y - dlag - freq + 1, y - dlag))] <- 
@@ -89,7 +84,9 @@ mseIndex <- function(
     # INDICATOR
     dat <- data.table(as.data.frame(cpue[,
       ac(seq(y - dlag - hcrparams$ny - 1, y - dlag))], drop=FALSE))
-    dat[is.na(data), data:=0.0001]
+    # BUG, this used to work: dat[is.na(data), data := 0.0001]
+    dat[is.na(data),]  <- 0.0001
+    
     slope <- dat[, {coef(lm(log(data)~year, na.action=na.exclude))[2]}, by = iter]$V1
 
     # DECISION
@@ -99,7 +96,8 @@ mseIndex <- function(
     
     # CONSTRAINT in TAC change
     ptac <- c(tac[, ac(y-dlag)])
-    ytac <- pmax(ptac * (1 - hcrparams$dltac), pmin(ptac * (1 + hcrparams$dhtac), ytac))
+    ytac <- pmax(ptac * c((1 - hcrparams$dltac)),
+      pmin(ptac * c((1 + hcrparams$dhtac)), ytac))
 
     # LOG tac
     tac[, ac(seq(y + mlag, length=freq))] <- rep(ytac, each=freq)
