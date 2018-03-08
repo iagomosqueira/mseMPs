@@ -7,39 +7,10 @@
 # Distributed under the terms of the European Union Public Licence (EUPL) V.1.1.
 
 # msePT {{{
-
-#' An example function to carry out an MSE run for a given MP
-#'
-#' Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend
-#' odio ac rutrum luctus. Aenean placerat porttitor commodo. Pellentesque eget porta
-#' libero. Pellentesque molestie mi sed orci feugiat, non mollis enim tristique. 
-#' Suspendisse eu sapien vitae arcu lobortis ultrices vitae ac velit. Curabitur id 
-#' nunc euismod ante fringilla lobortis. Aliquam ullamcorper in diam non placerat. 
-#'
-#' Aliquam sagittis feugiat felis eget consequat. Praesent eleifend dolor massa, 
-#' vitae faucibus justo lacinia a. Cras sed erat et magna pharetra bibendum quis in 
-#' mi. Sed sodales mollis arcu, sit amet venenatis lorem fringilla vel. Vivamus vitae 
-#' ipsum sem. Donec malesuada purus at libero bibendum accumsan. Donec ipsum sapien, 
-#' feugiat blandit arcu in, dapibus dictum felis. 
-#'
-#' @param PARAM Lorem ipsum dolor sit amet
-#'
-#' @return RETURN Lorem ipsum dolor sit amet
-#'
-#' @name FUNCTION
-#' @rdname FUNCTION
-#' @aliases FUNCTION
-#'
-#' @author The FLR Team
-#' @seealso \link{FLComp}
-#' @keywords design
-#' @examples
-
-# msePT {{{
 msePT <- function(
 
   # OM: FLStock + SR +
-  omp, sr,
+  omp, sr, refpts,
   # CPUE
   cpue, cpuesel,
   # years
@@ -89,24 +60,12 @@ msePT <- function(
     if(sa) {
     
     # CREATE bd object
-      # TODO ADD E (sampling noise) E ~ N(hr*B, sqrt(B*hr*(1-hr)))
-    bd <- mpb::biodyn(catch=catch(stk))
-
-    # Initial GUESS for k
-    params(bd)['k',] <- 20 * mean(catch(bd))
-
-    # SET initial values
-    bd <- mpb::fwd(bd, catch=catch(bd))
-    mpb::setParams(bd) <- window(cpue, end=y-dlag)
-    mpb::setControl(bd) <- params(bd)
-    bd@control["p",] <- c(-1, 0.0001, 0.0001, 0.0001)
-
-    # FIT bd (17 sec, 200 iter)
-    res <- mpb::fit(bd, index=window(cpue, end=y-dlag))
-
+    # TODO ADD E (sampling noise) E ~ N(hr*B, sqrt(B*hr*(1-hr)))
+    res <- fitPella(catch=catch(om), indices=FLQuants(LL=window(cpue, end=y-dlag)))
+   
     # RESULTS
     sb <- res@stock
-    MSY <- mpb::refpts(res)['msy']
+    MSY <- res$params[1,]
     # ---
 
     } else {
@@ -128,7 +87,8 @@ msePT <- function(
     
     # CONSTRAINT in TAC change
     ptac <- c(tac[, ac(y-dlag)])
-    ytac <- pmax(ptac * (1 - hcrparams$dltac), pmin(ptac * (1 + hcrparams$dhtac), c(ytac)))
+    ytac <- pmax(ptac * c(1 - hcrparams$dltac),
+      pmin(ptac * c(1 + hcrparams$dhtac), c(ytac)))
 
     # LOG tac
     tac[, ac(seq(y + mlag, length=freq))] <- rep(ytac, each=freq)
@@ -136,8 +96,8 @@ msePT <- function(
     # FWD w/IMP. ERROR + SR residuals
     # TODO ADD imp error
     omp <- fwd(omp, sr=sr,
-      control=fwdControl(quant="catch", year=seq(y + mlag, length=freq), value=rep(ytac)),
-      residuals=sr$residuals)
+      control=fwdControl(quant="catch", year=seq(y + mlag, length=freq),
+      value=rep(ytac, freq)), residuals=sr$residuals)
 
     # DONE
     if(verbose)
@@ -153,5 +113,4 @@ msePT <- function(
   else
     return(list(om=window(omp, start=years[1] - dlag - 1, end=years[length(years)]),
       tac=window(tac, end=years[length(years)]), cpue=cpue))
-
 } # }}}

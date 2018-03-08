@@ -66,7 +66,7 @@ mseIndex <- function(
 
     # oem w/ selectivity[, y - dlag] in weight
     obs <- quantSums(cpue(stk[,ac(seq(y - dlag - freq, y - dlag))],
-      f=cpuesel, mass=TRUE))
+      sel.pattern=cpuesel, mass=TRUE))
     
     # EXTEND cpue from delta(obs)
     cpue[, ac(seq(y - dlag - freq + 1, y - dlag))] <- 
@@ -84,10 +84,18 @@ mseIndex <- function(
     # INDICATOR
     dat <- data.table(as.data.frame(cpue[,
       ac(seq(y - dlag - hcrparams$ny - 1, y - dlag))], drop=FALSE))
-    # BUG, this used to work: dat[is.na(data), data := 0.0001]
-    dat[is.na(data),]  <- 0.0001
-    
-    slope <- dat[, {coef(lm(log(data)~year, na.action=na.exclude))[2]}, by = iter]$V1
+    dat$iter <- as.numeric(dat$iter)
+
+    # BUG: DT
+    # setnames(dat, "data", "da")
+    # CALCULATE slope
+    # foo <- function(x)
+    #  coef(lm(log(data)~year, data=x, na.action=na.exclude))[2]
+    # slope <- dat[, list(V1=foo(x)), by = iter]$V1
+
+    slope <- unlist(as.list(by(dat[, c("data", "year", "iter")], dat[, "iter"],
+      function(x)
+        coef(lm(log(data)~year, data=x, na.action=na.exclude))[2], simplify=TRUE)))
 
     # DECISION
     # TODO GENERALIZE based on formula (e.g. ~ssb)
@@ -106,7 +114,8 @@ mseIndex <- function(
     # TODO ADD imp error
       # tac + N(tac, sigma)
     omp <- fwd(omp, sr=sr, residuals=sr$residuals,
-      control=fwdControl(quant="catch", year=seq(y + mlag, length=freq), value=rep(ytac)))
+      control=fwdControl(quant="catch", year=seq(y + mlag, length=freq),
+      value=rep(ytac, freq)))
 
     # DONE
     if(verbose)
