@@ -1,7 +1,7 @@
 Package: mseMPs
 Title: Functions Implementing Different Management Procedures Using FLR
-Version: 0.0.1
-Date: 2017-09-20
+Version: 0.0.2
+Date: 2018-03-08
 Authors@R: c(person(given = "Iago", family = "Mosqueira", role = c("aut", "cre"),
     email = "iago.mosqueira@ec.europa.eu"),
   person(given = "Laurie", family = "Kell", role = c("aut"),  email = "laurie@kell.es"))

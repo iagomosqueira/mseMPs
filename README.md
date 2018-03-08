@@ -1,6 +1,6 @@
 # mseMPs
-- Version: 0.0.1
-- Date: 2017-09-20
+- Version: 0.0.2
+- Date: 2018-03-08
 - Author: Iago Mosqueira, EC JRC, Laurie Kell, Sea++.
 - Maintainer: Iago Mosqueira, EC JRC.
 - Repository: <https://github.com/iagomosqueira/mse/>
