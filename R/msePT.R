@@ -6,6 +6,7 @@
 #
 # Distributed under the terms of the European Union Public Licence (EUPL) V.1.1.
 
+
 # msePT {{{
 msePT <- function(
 
@@ -57,17 +58,24 @@ msePT <- function(
         sd=c(oemparams$sd), b=c(oemparams$b))
 
     # --- SA: (sb, MSY) <- bd(catch, cpue)
-    if(sa) {
-    
-    # CREATE bd object
     # TODO ADD E (sampling noise) E ~ N(hr*B, sqrt(B*hr*(1-hr)))
-    res <- fitPella(catch=catch(om), indices=FLQuants(LL=window(cpue, end=y-dlag)))
-   
-    # RESULTS
-    sb <- res@stock
-    MSY <- res$params[1,]
-    # ---
+    if(sa) {
 
+      res <- biodyn(catch=catch(stk), indices=FLQuants(LL=window(cpue, end=y-dlag)))
+      params(res) <- rbind(apply(params(res), 1, mean)[c("r", "k", "p", "b0")],
+        params(res)[c("q1", "sigma1")])
+
+      setControl(res) <- params(res)
+
+      res <- fit(res)
+
+      sb <- stock(res)
+      MSY <- params(res)['r',] * params(res)['k',] / 4
+
+    # res <- fitPella(catch=catch(stk), indices=FLQuants(LL=window(cpue, end=y-dlag)))
+    # sb <- res$stock
+    # MSY <- res$params['r',] * res$params['k',] / 4
+    
     } else {
     
     # HACK, direct obs of OM
@@ -111,6 +119,7 @@ msePT <- function(
   if(tune)
     return(window(omp, start=years[1] - dlag - 1, end=years[length(years)]))
   else
+    # TODO return hat(cpue)
     return(list(om=window(omp, start=years[1] - dlag - 1, end=years[length(years)]),
       tac=window(tac, end=years[length(years)]), cpue=cpue))
 } # }}}

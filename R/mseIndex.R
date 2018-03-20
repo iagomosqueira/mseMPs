@@ -6,6 +6,7 @@
 #
 # Distributed under the terms of the European Union Public Licence (EUPL) V.1.1.
 
+
 # mseIndex {{{
 
 #' @title mseIndex
@@ -124,7 +125,6 @@ mseIndex <- function(
 
   if(verbose)
     cat("\n")
-
   # END
   if(tune)
     return(window(omp, start=years[1] - dlag - 1, end=years[length(years)]))

@@ -1,5 +1,5 @@
 # mseMPs
-- Version: 0.0.2
+- Version: 0.0.3
 - Date: 2018-03-08
 - Author: Iago Mosqueira, EC JRC, Laurie Kell, Sea++.
 - Maintainer: Iago Mosqueira, EC JRC.
